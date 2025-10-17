@@ -332,22 +332,106 @@ class PlatformConfiguration extends Model
 - **Production**: Separate containers with proper scaling and load balancing
 - **Environment Variables**: Managed through .env files and Docker secrets
 
-## Security Considerations
+## Security Considerations (OWASP Compliance)
 
-### Data Protection
-- Encrypted storage of platform API credentials
-- Secure transmission of order data between services
-- Customer data anonymization for non-production environments
-- Docker secrets for sensitive configuration data
+### OWASP Top 10 Security Controls
 
-### Access Control
-- Role-based permissions for workflow tasks
-- API rate limiting and request validation
-- Audit logging for all order status changes and administrative actions
-- Container isolation and network security
+#### A01: Broken Access Control
+- Implement Laravel Sanctum with proper token management
+- Role-based access control (RBAC) with principle of least privilege
+- Session management with secure cookies and CSRF protection
+- API endpoint authorization with middleware validation
+- FilamentPHP resource-level permissions and policies
 
-### Platform Integration Security
-- OAuth 2.0 implementation where supported by platforms
-- API key rotation and secure storage
-- Request signing and validation for webhook endpoints
-- Secure inter-container communication
+#### A02: Cryptographic Failures
+- AES-256 encryption for sensitive data at rest
+- TLS 1.3 for all data in transit
+- Secure key management using Laravel's encryption system
+- Hashed passwords with bcrypt (cost factor 12+)
+- Encrypted database fields for API credentials and PII
+
+#### A03: Injection Attacks
+- Laravel Eloquent ORM to prevent SQL injection
+- Input validation and sanitization for all user inputs
+- Parameterized queries for any raw SQL operations
+- Command injection prevention in system calls
+- XSS protection with Laravel's built-in escaping
+
+#### A04: Insecure Design
+- Secure-by-default configuration
+- Threat modeling for workflow engine and platform integrations
+- Security requirements integrated into development lifecycle
+- Fail-safe defaults for all security controls
+- Defense in depth architecture
+
+#### A05: Security Misconfiguration
+- Secure Docker container configurations
+- Disabled debug mode in production
+- Removed default accounts and unnecessary services
+- Security headers implementation (HSTS, CSP, X-Frame-Options)
+- Regular security configuration reviews
+
+#### A06: Vulnerable Components
+- Automated dependency scanning with Composer audit
+- Regular updates of Laravel, FilamentPHP, and dependencies
+- Container image vulnerability scanning
+- Third-party library security assessment
+- Software Bill of Materials (SBOM) tracking
+
+#### A07: Authentication Failures
+- Multi-factor authentication support
+- Account lockout mechanisms
+- Strong password policies
+- Session timeout and management
+- Secure password recovery processes
+
+#### A08: Software Integrity Failures
+- Code signing for deployments
+- Dependency integrity verification
+- Secure CI/CD pipeline with integrity checks
+- Container image signing and verification
+- Audit trails for all code changes
+
+#### A09: Logging Failures
+- Comprehensive security event logging
+- Log integrity protection
+- Centralized log management
+- Real-time security monitoring and alerting
+- Log retention and secure storage
+
+#### A10: Server-Side Request Forgery (SSRF)
+- URL validation for platform API calls
+- Network segmentation and firewall rules
+- Whitelist-based external service access
+- Request timeout and size limitations
+- Proxy configuration for external requests
+
+### Additional Security Measures
+
+#### Container Security
+- Non-root user execution in containers
+- Read-only file systems where possible
+- Resource limits and security contexts
+- Network policies and service mesh security
+- Regular container image updates and scanning
+
+#### API Security
+- OAuth 2.0 with PKCE for platform integrations
+- API rate limiting and throttling
+- Request/response validation schemas
+- API versioning and deprecation policies
+- Webhook signature verification
+
+#### Data Protection
+- Data classification and handling procedures
+- PII anonymization and pseudonymization
+- Secure data backup and recovery
+- Data retention and deletion policies
+- GDPR compliance measures
+
+#### Monitoring and Incident Response
+- Security Information and Event Management (SIEM)
+- Intrusion detection and prevention
+- Automated threat response
+- Security incident response procedures
+- Regular security assessments and penetration testing
