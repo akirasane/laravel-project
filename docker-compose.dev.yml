@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 services:
   app:
@@ -113,7 +113,7 @@ services:
       - APP_ENV=local
       - DB_HOST=mysql
       - REDIS_HOST=redis
-    command: php artisan websockets:serve --host=0.0.0.0 --port=6001
+    command: php artisan reverb:start --host=0.0.0.0 --port=6001
     networks:
       - order_management_network
     depends_on:
