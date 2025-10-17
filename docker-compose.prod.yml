@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: order_management_app_prod
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_cache:/var/www/html/bootstrap/cache
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    secrets:
+      - app_key
+      - db_password
+      - redis_password
+    networks:
+      - order_management_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "php", "artisan", "tinker", "--execute=echo 'OK';"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: order_management_nginx_prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites/laravel.prod.conf:/etc/nginx/sites-available/laravel.conf
+      - ./docker/nginx/ssl:/etc/ssl/certs
+      - app_storage:/var/www/html/storage:ro
+    networks:
+      - order_management_network
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql:
+    image: mysql:8.0
+    container_name: order_management_mysql_prod
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: order_management_prod
+      MYSQL_USER: laravel
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./docker/mysql/my.prod.cnf:/etc/mysql/my.cnf
+    networks:
+      - order_management_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: order_management_redis_prod
+    restart: unless-stopped
+    volumes:
+      - redis_prod_data:/data
+      - ./docker/redis/redis.prod.conf:/usr/local/etc/redis/redis.conf
+    secrets:
+      - redis_password
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - order_management_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: order_management_queue_prod
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      - APP_ENV=production
+    secrets:
+      - app_key
+      - db_password
+      - redis_password
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --memory=512
+    networks:
+      - order_management_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  websocket:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: order_management_websocket_prod
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "6001:6001"
+    environment:
+      - APP_ENV=production
+    secrets:
+      - app_key
+      - db_password
+      - redis_password
+    command: php artisan websockets:serve --host=0.0.0.0 --port=6001
+    networks:
+      - order_management_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "6001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: order_management_scheduler_prod
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      - APP_ENV=production
+    secrets:
+      - app_key
+      - db_password
+      - redis_password
+    command: php artisan schedule:work
+    networks:
+      - order_management_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+networks:
+  order_management_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mysql_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  app_storage:
+    driver: local
+  app_cache:
+    driver: local
+
+secrets:
+  app_key:
+    external: true
+  db_password:
+    external: true
+  mysql_root_password:
+    external: true
+  mysql_password:
+    external: true
+  redis_password:
+    external: true

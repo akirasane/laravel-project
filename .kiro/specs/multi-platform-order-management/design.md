@@ -327,10 +327,161 @@ class PlatformConfiguration extends Model
 - **websocket**: Laravel WebSocket server for real-time communication
 - **scheduler**: Laravel task scheduler for automated operations
 
-### Development vs Production
-- **Development**: Single docker-compose.yml with all services
-- **Production**: Separate containers with proper scaling and load balancing
-- **Environment Variables**: Managed through .env files and Docker secrets
+### Environment Configuration Management
+
+#### Development Environment (.env.development)
+```env
+# Application
+APP_NAME="Order Management System"
+APP_ENV=local
+APP_KEY=base64:generated_key
+APP_DEBUG=true
+APP_URL=http://localhost
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=order_management_dev
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+
+# Redis
+REDIS_HOST=redis
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+# Queue
+QUEUE_CONNECTION=redis
+QUEUE_FAILED_DRIVER=database-uuids
+
+# WebSocket
+PUSHER_APP_ID=local
+PUSHER_APP_KEY=local
+PUSHER_APP_SECRET=local
+PUSHER_HOST=127.0.0.1
+PUSHER_PORT=6001
+PUSHER_SCHEME=http
+
+# Platform APIs (Development/Sandbox)
+SHOPEE_API_URL=https://partner.test-stable.shopeemobile.com
+SHOPEE_PARTNER_ID=dev_partner_id
+SHOPEE_PARTNER_KEY=dev_partner_key
+
+LAZADA_API_URL=https://api.lazada.com/rest
+LAZADA_APP_KEY=dev_app_key
+LAZADA_APP_SECRET=dev_app_secret
+
+SHOPIFY_API_URL=https://your-dev-store.myshopify.com
+SHOPIFY_API_KEY=dev_api_key
+SHOPIFY_API_SECRET=dev_api_secret
+
+TIKTOK_API_URL=https://open-api.tiktokglobalshop.com
+TIKTOK_APP_KEY=dev_app_key
+TIKTOK_APP_SECRET=dev_app_secret
+
+# Security Settings
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=lax
+
+# Logging
+LOG_CHANNEL=stack
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+# Mail (Development)
+MAIL_MAILER=log
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+```
+
+#### Production Environment (.env.production)
+```env
+# Application
+APP_NAME="Order Management System"
+APP_ENV=production
+APP_KEY=base64:production_generated_key
+APP_DEBUG=false
+APP_URL=https://your-domain.com
+
+# Database (Production)
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=order_management_prod
+DB_USERNAME=${DB_USERNAME}
+DB_PASSWORD=${DB_PASSWORD}
+
+# Redis (Production)
+REDIS_HOST=redis
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_PORT=6379
+
+# Queue
+QUEUE_CONNECTION=redis
+QUEUE_FAILED_DRIVER=database-uuids
+
+# WebSocket (Production)
+PUSHER_APP_ID=${PUSHER_APP_ID}
+PUSHER_APP_KEY=${PUSHER_APP_KEY}
+PUSHER_APP_SECRET=${PUSHER_APP_SECRET}
+PUSHER_HOST=${PUSHER_HOST}
+PUSHER_PORT=443
+PUSHER_SCHEME=https
+
+# Platform APIs (Production)
+SHOPEE_API_URL=https://partner.shopeemobile.com
+SHOPEE_PARTNER_ID=${SHOPEE_PARTNER_ID}
+SHOPEE_PARTNER_KEY=${SHOPEE_PARTNER_KEY}
+
+LAZADA_API_URL=https://api.lazada.com/rest
+LAZADA_APP_KEY=${LAZADA_APP_KEY}
+LAZADA_APP_SECRET=${LAZADA_APP_SECRET}
+
+SHOPIFY_API_URL=${SHOPIFY_API_URL}
+SHOPIFY_API_KEY=${SHOPIFY_API_KEY}
+SHOPIFY_API_SECRET=${SHOPIFY_API_SECRET}
+
+TIKTOK_API_URL=https://open-api.tiktokglobalshop.com
+TIKTOK_APP_KEY=${TIKTOK_APP_KEY}
+TIKTOK_APP_SECRET=${TIKTOK_APP_SECRET}
+
+# Security Settings (Production)
+SESSION_LIFETIME=60
+SESSION_ENCRYPT=true
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=strict
+SESSION_SECURE_COOKIE=true
+
+# Logging (Production)
+LOG_CHANNEL=stack
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=error
+
+# Mail (Production)
+MAIL_MAILER=smtp
+MAIL_HOST=${MAIL_HOST}
+MAIL_PORT=587
+MAIL_USERNAME=${MAIL_USERNAME}
+MAIL_PASSWORD=${MAIL_PASSWORD}
+MAIL_ENCRYPTION=tls
+
+# Security Headers
+SECURITY_HSTS_MAX_AGE=31536000
+SECURITY_CSP_ENABLED=true
+SECURITY_FRAME_OPTIONS=DENY
+
+# Monitoring
+SENTRY_LARAVEL_DSN=${SENTRY_DSN}
+```
+
+#### Docker Secrets Management
+- **Development**: Uses .env files directly
+- **Production**: Uses Docker secrets and environment variable injection
+- **Sensitive Data**: API keys, passwords, and tokens managed through Docker secrets
+- **Configuration Validation**: Startup scripts validate required environment variables
 
 ## Security Considerations (OWASP Compliance)
 

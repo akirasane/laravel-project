@@ -1,0 +1,27 @@
+{
+    "name": "order-management-system",
+    "version": "1.0.0",
+    "description": "Multi-Platform Order Management System Frontend",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "watch": "vite build --watch"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.7",
+        "@tailwindcss/typography": "^0.5.10",
+        "alpinejs": "^3.13.3",
+        "autoprefixer": "^10.4.16",
+        "axios": "^1.6.2",
+        "laravel-vite-plugin": "^1.0.0",
+        "postcss": "^8.4.32",
+        "tailwindcss": "^3.3.6",
+        "vite": "^5.0.8"
+    },
+    "dependencies": {
+        "pusher-js": "^8.4.0-rc2",
+        "laravel-echo": "^1.15.3"
+    }
+}
