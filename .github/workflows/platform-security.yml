@@ -1,0 +1,249 @@
+name: Platform Security Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'app/Services/Platform**'
+      - 'app/Contracts/Platform**'
+      - 'config/platforms.php'
+      - 'tests/Feature/PlatformSecurityTest.php'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'app/Services/Platform**'
+      - 'app/Contracts/Platform**'
+      - 'config/platforms.php'
+      - 'tests/Feature/PlatformSecurityTest.php'
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - vulnerabilities
+          - platform-tests
+
+jobs:
+  security-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+        coverage: xdebug
+
+    - name: Copy environment file
+      run: cp .env.example .env
+
+    - name: Install Composer dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Set up database
+      run: |
+        php artisan migrate --force
+        php artisan db:seed --force
+
+    - name: Create storage directories
+      run: |
+        mkdir -p storage/logs
+        chmod -R 775 storage
+
+    - name: Run Platform Security Tests
+      run: |
+        php artisan test tests/Feature/PlatformSecurityTest.php \
+          --coverage-clover=coverage.xml \
+          --log-junit=test-results.xml
+
+    - name: Run Dependency Vulnerability Scan
+      if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'vulnerabilities' || github.event_name == 'schedule'
+      run: |
+        php artisan platform:security-scan \
+          --vulnerabilities \
+          --report \
+          --fail-on-issues
+
+    - name: Run Platform Connection Tests
+      if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'platform-tests'
+      run: |
+        php artisan platform:security-scan \
+          --report \
+          --fail-on-issues
+      continue-on-error: true # Don't fail if platforms are not configured
+
+    - name: Upload security report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: storage/logs/platform-security-report-*.json
+        retention-days: 30
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          test-results.xml
+          coverage.xml
+        retention-days: 30
+
+    - name: Comment PR with security results
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find the latest security report
+          const logsDir = 'storage/logs';
+          const files = fs.readdirSync(logsDir).filter(f => f.startsWith('platform-security-report-'));
+          
+          if (files.length > 0) {
+            const latestReport = files.sort().pop();
+            const reportPath = path.join(logsDir, latestReport);
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            
+            const summary = report.summary;
+            const hasIssues = summary.platforms_with_issues > 0 || summary.total_vulnerabilities > 0;
+            
+            const comment = `## 🔒 Platform Security Scan Results
+            
+            **Summary:**
+            - Total Platforms: ${summary.total_platforms}
+            - Platforms with Issues: ${summary.platforms_with_issues}
+            - Vulnerabilities Found: ${summary.total_vulnerabilities}
+            - Generated: ${report.generated_at}
+            
+            ${hasIssues ? '⚠️ **Security issues detected!** Please review the detailed report.' : '✅ **No security issues detected.**'}
+            
+            <details>
+            <summary>Platform Details</summary>
+            
+            ${Object.entries(report.platforms).map(([platform, data]) => 
+              `**${platform}:** ${data.has_security_issues ? '⚠️ Has Issues' : '✅ Clean'}`
+            ).join('\n')}
+            
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'vulnerabilities'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Composer Audit
+      run: composer audit --format=json --no-dev > composer-audit.json || true
+
+    - name: Parse Composer Audit Results
+      run: |
+        if [ -f composer-audit.json ]; then
+          echo "## Composer Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if there are any advisories
+          advisories=$(jq '.advisories | length' composer-audit.json)
+          
+          if [ "$advisories" -gt 0 ]; then
+            echo "⚠️ **$advisories security advisories found**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Package | Version | Vulnerability | Severity |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|---------|---------------|----------|" >> $GITHUB_STEP_SUMMARY
+            
+            jq -r '.advisories[] | "| \(.packageName) | \(.affectedVersions) | \(.title) | \(.severity) |"' composer-audit.json >> $GITHUB_STEP_SUMMARY
+            
+            # Fail the job if high severity vulnerabilities are found
+            high_severity=$(jq '[.advisories[] | select(.severity == "high" or .severity == "critical")] | length' composer-audit.json)
+            if [ "$high_severity" -gt 0 ]; then
+              echo "❌ High/Critical severity vulnerabilities found. Failing the build."
+              exit 1
+            fi
+          else
+            echo "✅ **No security advisories found**" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+    - name: Upload audit results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: composer-audit
+        path: composer-audit.json
+        retention-days: 30
+
+  notify-security-team:
+    runs-on: ubuntu-latest
+    needs: [security-tests, dependency-check]
+    if: failure() && (github.event_name == 'schedule' || github.ref == 'refs/heads/main')
+    
+    steps:
+    - name: Notify Security Team
+      uses: actions/github-script@v6
+      with:
+        script: |
+          // Create an issue for security team attention
+          const title = `🚨 Platform Security Scan Failed - ${new Date().toISOString().split('T')[0]}`;
+          const body = `## Security Scan Failure Alert
+          
+          The automated platform security scan has detected issues that require attention.
+          
+          **Details:**
+          - Workflow: ${context.workflow}
+          - Run ID: ${context.runId}
+          - Commit: ${context.sha}
+          - Branch: ${context.ref}
+          - Triggered by: ${context.eventName}
+          
+          **Action Required:**
+          1. Review the failed workflow run: ${context.payload.repository.html_url}/actions/runs/${context.runId}
+          2. Download and analyze security reports from the artifacts
+          3. Address any identified vulnerabilities or security issues
+          4. Update dependencies if necessary
+          
+          **Priority:** High - Security issues detected in platform integrations
+          
+          /cc @security-team`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['security', 'platform', 'urgent']
+          });
