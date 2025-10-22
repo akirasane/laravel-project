@@ -37,7 +37,13 @@ class SecurityHeaders
 
         // Content Security Policy (CSP)
         if ($config['csp']['enabled']) {
-            $response->headers->set('Content-Security-Policy', $config['csp']['policy']);
+            $cspPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';";
+            
+            if ($config['csp']['report_only']) {
+                $response->headers->set('Content-Security-Policy-Report-Only', $cspPolicy);
+            } else {
+                $response->headers->set('Content-Security-Policy', $cspPolicy);
+            }
         }
 
         // X-Frame-Options

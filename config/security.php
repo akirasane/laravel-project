@@ -1,17 +1,86 @@
 <?php
 
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Security Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This file contains security-related configuration options for the
+    | Order Management System, following OWASP security best practices.
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Policy Configuration
+    |--------------------------------------------------------------------------
+    */
+    'password' => [
+        'min_length' => env('SECURITY_PASSWORD_MIN_LENGTH', 12),
+        'require_uppercase' => env('SECURITY_PASSWORD_REQUIRE_UPPERCASE', true),
+        'require_lowercase' => env('SECURITY_PASSWORD_REQUIRE_LOWERCASE', true),
+        'require_numbers' => env('SECURITY_PASSWORD_REQUIRE_NUMBERS', true),
+        'require_symbols' => env('SECURITY_PASSWORD_REQUIRE_SYMBOLS', true),
+        'prevent_common' => env('SECURITY_PASSWORD_PREVENT_COMMON', true),
+        'prevent_personal_info' => env('SECURITY_PASSWORD_PREVENT_PERSONAL_INFO', true),
+        'history_count' => env('SECURITY_PASSWORD_HISTORY_COUNT', 5),
+        'max_age_days' => env('SECURITY_PASSWORD_MAX_AGE_DAYS', 90),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Account Lockout Configuration
+    |--------------------------------------------------------------------------
+    */
+    'lockout' => [
+        'max_attempts' => env('SECURITY_LOCKOUT_MAX_ATTEMPTS', 5),
+        'lockout_duration' => env('SECURITY_LOCKOUT_DURATION', 900), // 15 minutes
+        'progressive_delay' => env('SECURITY_LOCKOUT_PROGRESSIVE_DELAY', true),
+        'notify_admin' => env('SECURITY_LOCKOUT_NOTIFY_ADMIN', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session Security Configuration
+    |--------------------------------------------------------------------------
+    */
+    'session' => [
+        'timeout_minutes' => env('SECURITY_SESSION_TIMEOUT', 60),
+        'concurrent_sessions' => env('SECURITY_CONCURRENT_SESSIONS', 1),
+        'require_fresh_auth' => env('SECURITY_REQUIRE_FRESH_AUTH', 30), // minutes
+        'regenerate_on_login' => env('SECURITY_REGENERATE_ON_LOGIN', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rate Limiting Configuration
+    |--------------------------------------------------------------------------
+    */
+    'rate_limiting' => [
+        'login_attempts' => env('SECURITY_RATE_LIMIT_LOGIN', '5,1'), // 5 attempts per minute
+        'api_requests' => env('SECURITY_RATE_LIMIT_API', '60,1'), // 60 requests per minute
+        'password_reset' => env('SECURITY_RATE_LIMIT_PASSWORD_RESET', '3,60'), // 3 attempts per hour
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication Configuration
+    |--------------------------------------------------------------------------
+    */
+    'two_factor' => [
+        'enabled' => env('SECURITY_2FA_ENABLED', true),
+        'required_for_admin' => env('SECURITY_2FA_REQUIRED_ADMIN', true),
+        'backup_codes_count' => env('SECURITY_2FA_BACKUP_CODES', 8),
+        'totp_window' => env('SECURITY_2FA_TOTP_WINDOW', 1),
+        'remember_device_days' => env('SECURITY_2FA_REMEMBER_DEVICE', 30),
+    ],
 
     /*
     |--------------------------------------------------------------------------
     | Security Headers Configuration
     |--------------------------------------------------------------------------
-    |
-    | Configure security headers for OWASP compliance and protection against
-    | common web vulnerabilities.
-    |
     */
-
     'headers' => [
         'hsts' => [
             'enabled' => env('SECURITY_HSTS_ENABLED', true),
@@ -19,12 +88,11 @@ return [
             'include_subdomains' => env('SECURITY_HSTS_INCLUDE_SUBDOMAINS', true),
             'preload' => env('SECURITY_HSTS_PRELOAD', true),
         ],
-
         'csp' => [
             'enabled' => env('SECURITY_CSP_ENABLED', true),
-            'policy' => env('SECURITY_CSP_POLICY', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none';"),
+            'report_only' => env('SECURITY_CSP_REPORT_ONLY', false),
+            'report_uri' => env('SECURITY_CSP_REPORT_URI'),
         ],
-
         'frame_options' => env('SECURITY_FRAME_OPTIONS', 'DENY'),
         'content_type_options' => env('SECURITY_CONTENT_TYPE_OPTIONS', 'nosniff'),
         'referrer_policy' => env('SECURITY_REFERRER_POLICY', 'strict-origin-when-cross-origin'),
@@ -33,158 +101,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | CORS Configuration
+    | Audit Logging Configuration
     |--------------------------------------------------------------------------
-    |
-    | Configure Cross-Origin Resource Sharing (CORS) settings for API endpoints.
-    |
     */
-
-    'cors' => [
-        'allowed_origins' => array_filter(explode(',', env('SECURITY_CORS_ALLOWED_ORIGINS', ''))),
-        'allowed_methods' => explode(',', env('SECURITY_CORS_ALLOWED_METHODS', 'GET,POST,PUT,DELETE,OPTIONS')),
-        'allowed_headers' => explode(',', env('SECURITY_CORS_ALLOWED_HEADERS', 'Content-Type,Authorization,X-Requested-With')),
-        'exposed_headers' => explode(',', env('SECURITY_CORS_EXPOSED_HEADERS', '')),
-        'max_age' => env('SECURITY_CORS_MAX_AGE', 86400),
-        'supports_credentials' => env('SECURITY_CORS_SUPPORTS_CREDENTIALS', false),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Input Validation Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure input validation and sanitization settings.
-    |
-    */
-
-    'validation' => [
-        'max_input_vars' => env('SECURITY_MAX_INPUT_VARS', 1000),
-        'max_file_size' => env('SECURITY_MAX_FILE_SIZE', 10240), // KB
-        'allowed_file_types' => explode(',', env('SECURITY_ALLOWED_FILE_TYPES', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx')),
-        'sanitize_html' => env('SECURITY_SANITIZE_HTML', true),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Rate Limiting Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure rate limiting for API endpoints and authentication attempts.
-    |
-    */
-
-    'rate_limiting' => [
-        'api' => [
-            'max_attempts' => env('SECURITY_API_RATE_LIMIT', 60),
-            'decay_minutes' => env('SECURITY_API_RATE_DECAY', 1),
-        ],
-        'auth' => [
-            'max_attempts' => env('SECURITY_AUTH_RATE_LIMIT', 5),
-            'decay_minutes' => env('SECURITY_AUTH_RATE_DECAY', 15),
-        ],
-        'password_reset' => [
-            'max_attempts' => env('SECURITY_PASSWORD_RESET_RATE_LIMIT', 3),
-            'decay_minutes' => env('SECURITY_PASSWORD_RESET_RATE_DECAY', 60),
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Database Encryption Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure encryption settings for sensitive database fields.
-    |
-    */
-
-    'encryption' => [
-        'key' => env('SECURITY_ENCRYPTION_KEY', env('APP_KEY')),
-        'cipher' => env('SECURITY_ENCRYPTION_CIPHER', 'AES-256-CBC'),
-        'sensitive_fields' => [
-            'api_credentials',
-            'access_tokens',
-            'refresh_tokens',
-            'customer_phone',
-            'customer_email',
-            'billing_address',
-            'shipping_address',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Session Security Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Additional session security settings beyond Laravel's default configuration.
-    |
-    */
-
-    'session' => [
-        'regenerate_on_login' => env('SECURITY_SESSION_REGENERATE_ON_LOGIN', true),
-        'invalidate_on_password_change' => env('SECURITY_SESSION_INVALIDATE_ON_PASSWORD_CHANGE', true),
-        'concurrent_sessions' => env('SECURITY_CONCURRENT_SESSIONS', 1),
-        'idle_timeout' => env('SECURITY_SESSION_IDLE_TIMEOUT', 1800), // 30 minutes
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Password Policy Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure password strength requirements and policies.
-    |
-    */
-
-    'password_policy' => [
-        'min_length' => env('SECURITY_PASSWORD_MIN_LENGTH', 12),
-        'require_uppercase' => env('SECURITY_PASSWORD_REQUIRE_UPPERCASE', true),
-        'require_lowercase' => env('SECURITY_PASSWORD_REQUIRE_LOWERCASE', true),
-        'require_numbers' => env('SECURITY_PASSWORD_REQUIRE_NUMBERS', true),
-        'require_symbols' => env('SECURITY_PASSWORD_REQUIRE_SYMBOLS', true),
-        'prevent_common_passwords' => env('SECURITY_PASSWORD_PREVENT_COMMON', true),
-        'prevent_personal_info' => env('SECURITY_PASSWORD_PREVENT_PERSONAL', true),
-        'history_count' => env('SECURITY_PASSWORD_HISTORY_COUNT', 5),
-        'expiry_days' => env('SECURITY_PASSWORD_EXPIRY_DAYS', 90),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Account Lockout Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure account lockout mechanisms for failed authentication attempts.
-    |
-    */
-
-    'account_lockout' => [
-        'enabled' => env('SECURITY_ACCOUNT_LOCKOUT_ENABLED', true),
-        'max_attempts' => env('SECURITY_ACCOUNT_LOCKOUT_MAX_ATTEMPTS', 5),
-        'lockout_duration' => env('SECURITY_ACCOUNT_LOCKOUT_DURATION', 900), // 15 minutes
-        'progressive_delay' => env('SECURITY_ACCOUNT_LOCKOUT_PROGRESSIVE', true),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Audit Trail Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure audit logging for security events and data changes.
-    |
-    */
-
     'audit' => [
         'enabled' => env('SECURITY_AUDIT_ENABLED', true),
-        'log_channel' => env('SECURITY_AUDIT_LOG_CHANNEL', 'audit'),
-        'events' => [
-            'authentication' => env('SECURITY_AUDIT_AUTH', true),
-            'authorization' => env('SECURITY_AUDIT_AUTHZ', true),
-            'data_changes' => env('SECURITY_AUDIT_DATA_CHANGES', true),
-            'admin_actions' => env('SECURITY_AUDIT_ADMIN_ACTIONS', true),
-            'api_calls' => env('SECURITY_AUDIT_API_CALLS', true),
-        ],
+        'log_authentication' => env('SECURITY_AUDIT_AUTH', true),
+        'log_authorization' => env('SECURITY_AUDIT_AUTHZ', true),
+        'log_data_changes' => env('SECURITY_AUDIT_DATA_CHANGES', true),
+        'log_admin_actions' => env('SECURITY_AUDIT_ADMIN_ACTIONS', true),
         'retention_days' => env('SECURITY_AUDIT_RETENTION_DAYS', 365),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Token Configuration
+    |--------------------------------------------------------------------------
+    */
+    'api_tokens' => [
+        'default_expiration' => env('SECURITY_API_TOKEN_EXPIRATION', 60), // minutes
+        'max_tokens_per_user' => env('SECURITY_API_MAX_TOKENS_PER_USER', 5),
+        'require_abilities' => env('SECURITY_API_REQUIRE_ABILITIES', true),
+        'log_token_usage' => env('SECURITY_API_LOG_TOKEN_USAGE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | CORS Security Configuration
+    |--------------------------------------------------------------------------
+    */
+    'cors' => [
+        'allowed_origins' => explode(',', env('SECURITY_CORS_ALLOWED_ORIGINS', '')),
+        'allowed_methods' => explode(',', env('SECURITY_CORS_ALLOWED_METHODS', 'GET,POST,PUT,DELETE,OPTIONS')),
+        'allowed_headers' => explode(',', env('SECURITY_CORS_ALLOWED_HEADERS', 'Content-Type,Authorization,X-Requested-With')),
+        'max_age' => env('SECURITY_CORS_MAX_AGE', 86400),
+    ],
 ];

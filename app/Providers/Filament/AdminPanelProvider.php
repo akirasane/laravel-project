@@ -18,6 +18,10 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\CheckAccountLockout;
+use App\Http\Middleware\TrackUserSession;
+use App\Http\Middleware\AuditLogger;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -51,6 +55,10 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SecurityHeaders::class,
+                CheckAccountLockout::class,
+                TrackUserSession::class,
+                AuditLogger::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
