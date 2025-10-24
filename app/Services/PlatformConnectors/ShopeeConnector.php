@@ -94,6 +94,11 @@ class ShopeeConnector extends AbstractPlatformConnector
     public function testConnection(): bool
     {
         try {
+            if (!$this->loadCredentials()) {
+                Log::warning('No credentials available for Shopee connection test');
+                return false;
+            }
+
             return $this->circuitBreaker->call(function () {
                 $response = $this->makeRequest('POST', '/api/v2/auth/token/get', [
                     'code' => 'test_connection',

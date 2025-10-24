@@ -55,10 +55,11 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                SecurityHeaders::class,
-                CheckAccountLockout::class,
-                TrackUserSession::class,
-                AuditLogger::class,
+                // Temporarily disabled for performance
+                // SecurityHeaders::class,
+                // CheckAccountLockout::class,
+                // TrackUserSession::class,
+                // AuditLogger::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

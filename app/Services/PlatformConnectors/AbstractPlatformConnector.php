@@ -15,7 +15,7 @@ use Exception;
 abstract class AbstractPlatformConnector implements PlatformConnectorInterface
 {
     protected PlatformCredentialManager $credentialManager;
-    protected array $credentials;
+    protected array $credentials = [];
     protected string $platformType;
     protected array $rateLimits;
     protected int $requestTimeout;

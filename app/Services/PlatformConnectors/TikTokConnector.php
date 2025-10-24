@@ -97,6 +97,11 @@ class TikTokConnector extends AbstractPlatformConnector
     public function testConnection(): bool
     {
         try {
+            if (!$this->loadCredentials()) {
+                Log::warning('No credentials available for TikTok connection test');
+                return false;
+            }
+
             return $this->circuitBreaker->call(function () {
                 $response = $this->makeRequest('GET', '/api/orders/search', [
                     'shop_id' => $this->credentials['shop_id'],

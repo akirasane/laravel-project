@@ -136,4 +136,17 @@ return [
         'allowed_headers' => explode(',', env('SECURITY_CORS_ALLOWED_HEADERS', 'Content-Type,Authorization,X-Requested-With')),
         'max_age' => env('SECURITY_CORS_MAX_AGE', 86400),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Input Validation Configuration
+    |--------------------------------------------------------------------------
+    */
+    'validation' => [
+        'max_input_vars' => env('SECURITY_MAX_INPUT_VARS', 1000),
+        'sanitize_html' => env('SECURITY_SANITIZE_HTML', true),
+        'max_string_length' => env('SECURITY_MAX_STRING_LENGTH', 10000),
+        'allowed_file_types' => explode(',', env('SECURITY_ALLOWED_FILE_TYPES', 'jpg,jpeg,png,gif,pdf,doc,docx')),
+        'max_file_size' => env('SECURITY_MAX_FILE_SIZE', 10485760), // 10MB
+    ],
 ];

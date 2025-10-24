@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 // Register platform security commands
 use App\Console\Commands\PlatformSecurityScanCommand;
 
-Artisan::command('platform:security-scan', PlatformSecurityScanCommand::class);
+// In Laravel 12, commands are auto-discovered, but we can still register them manually if needed
 
 // Schedule security cleanup tasks
 use Illuminate\Console\Scheduling\Schedule;

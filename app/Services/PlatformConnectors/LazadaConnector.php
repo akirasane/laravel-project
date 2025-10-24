@@ -80,6 +80,11 @@ class LazadaConnector extends AbstractPlatformConnector
     public function testConnection(): bool
     {
         try {
+            if (!$this->loadCredentials()) {
+                Log::warning('No credentials available for Lazada connection test');
+                return false;
+            }
+
             return $this->circuitBreaker->call(function () {
                 $params = $this->buildLazadaParams('/orders/get', [
                     'created_after' => now()->subMinute()->toISOString(),

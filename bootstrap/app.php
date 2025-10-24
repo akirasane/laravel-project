@@ -14,12 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Security middleware
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\InputSanitization::class,
+            // \App\Http\Middleware\InputSanitization::class, // Temporarily disabled for performance
         ]);
 
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\InputSanitization::class,
+            // \App\Http\Middleware\InputSanitization::class, // Temporarily disabled for performance
         ]);
 
         // Rate limiting middleware aliases

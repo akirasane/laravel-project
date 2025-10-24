@@ -216,7 +216,11 @@ class ConfigurationValidationService
 
         // Check Redis connection
         try {
-            \Redis::connection()->ping();
+            if (class_exists('\Redis') && extension_loaded('redis')) {
+                \Illuminate\Support\Facades\Redis::connection()->ping();
+            } else {
+                $warnings[] = 'Redis PHP extension not installed - using array cache driver instead';
+            }
         } catch (\Exception $e) {
             $warnings[] = 'Redis connection failed: ' . $e->getMessage();
         }
